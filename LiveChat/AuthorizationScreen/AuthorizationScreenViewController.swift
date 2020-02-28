@@ -25,68 +25,67 @@ class AuthorizationScreenViewController: UIViewController, AuthorizationScreenDi
     
     var nameTextFieldHeightAncor: NSLayoutConstraint?
     
+    
     // MARK: - Properties
+    let loginFormBackgroudView: UIView = {
+        let view = UIView()
+        view.translatesAutoresizingMaskIntoConstraints = false
+        return view
+    }()
+    
     let backgroudView: UIView = {
         let view = UIView()
         view.translatesAutoresizingMaskIntoConstraints = false
         return view
     }()
     
+    let chatIconImageView: UIImageView = {
+        let imageView = UIImageView()
+        imageView.image = UIImage(named: "chatIcon")
+        imageView.translatesAutoresizingMaskIntoConstraints = false
+        return imageView
+    }()
+    
     lazy var segmentedControll: UISegmentedControl = {
         let items = ["login", "registration"]
         let segmentedControll = UISegmentedControl(items: items)
         segmentedControll.translatesAutoresizingMaskIntoConstraints = false
-        segmentedControll.backgroundColor = .black
-        segmentedControll.selectedSegmentIndex = 0
+        segmentedControll.backgroundColor = #colorLiteral(red: 0.9333333333, green: 0.3882352941, blue: 0.631372549, alpha: 1)
+        segmentedControll.selectedSegmentIndex = 1
         segmentedControll.addTarget(self, action: #selector(segmentedControlledWasPressed), for: .valueChanged)
         return segmentedControll
     }()
     
-    let emailTextField: UITextField = {
-        let textField = UITextField()
-        textField.placeholder = "Email"
-        textField.backgroundColor = .lightGray
-        textField.translatesAutoresizingMaskIntoConstraints = false
-        return textField
-    }()
-    
-    let nameTextField: UITextField = {
-        let textField = UITextField()
-        textField.backgroundColor = .lightGray
-        textField.placeholder = "Name"
-        textField.translatesAutoresizingMaskIntoConstraints = false
-        return textField
-    }()
-    
-    let passwordTextField: UITextField = {
-        let textField = UITextField()
-        textField.placeholder = "Password"
-        textField.backgroundColor = .lightGray
-        textField.translatesAutoresizingMaskIntoConstraints = false
-        textField.textContentType = .newPassword
-        return textField
-    }()
+    let emailTextField = AuthorizationScreenTextField()
+    let nameTextField = AuthorizationScreenTextField()
+    let passwordTextField = AuthorizationScreenTextField()
     
     lazy var loginButton: UIButton = {
         let button = UIButton()
-        button.backgroundColor = .black
+        button.backgroundColor = #colorLiteral(red: 0.9317067266, green: 0.3866539598, blue: 0.6329562068, alpha: 1)
+        button.layer.cornerRadius = 20
+        button.setTitleColor(.white, for: .normal)
         button.translatesAutoresizingMaskIntoConstraints = false
         button.addTarget(self, action: #selector(loginButtonWasPressed), for: .touchUpInside)
-        button.setTitle(self.segmentedControll.titleForSegment(at: self.segmentedControll.selectedSegmentIndex), for: .normal)
+        button.setTitle("REGISTRATION", for: .normal)
         return button
     }()
-    
     // MARK: - Methods
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        view.backgroundColor = .white
+        view.backgroundColor = #colorLiteral(red: 0.2598086596, green: 0.2304657698, blue: 0.3598444462, alpha: 1)
+        navigationController?.setNavigationBarHidden(true, animated: false)
         configurator.setup(viewController: self)
         layoutFirstLayer()
         layoutSecondLayer()
+        layoutThirdLayer()
         interactor?.checkIfUserAvailable(requset: AuthorizationScreen.CheckIfUserAvailable.Request())
     }
-
+    
+    override func viewWillAppear(_ animated: Bool) {
+        navigationController?.setNavigationBarHidden(true, animated: false)
+    }
     
     func displayNameTextFieldNewsHeight(viewModel: AuthorizationScreen.ChangeTextFieldHeight.ViewModel) {
         nameTextFieldHeightAncor?.isActive = false
@@ -105,17 +104,18 @@ class AuthorizationScreenViewController: UIViewController, AuthorizationScreenDi
     @objc private func segmentedControlledWasPressed() {
         guard let title = segmentedControll.titleForSegment(at: segmentedControll.selectedSegmentIndex)
             else { return }
+        
         let request = AuthorizationScreen.ChangeTextFieldHeight.Request(segmentedTitle: title)
         interactor?.changeTextFieldHeight(request: request)
-        loginButton.setTitle(title, for: .normal)
+        loginButton.setTitle(title.uppercased(), for: .normal)
     }
     
     @objc private func loginButtonWasPressed() {
         let title = loginButton.titleLabel?.text!
         switch title {
-        case "login":
+        case "LOGIN":
             login()
-        case "registration":
+        case "REGISTRAION":
             saveUser()
         default:
             return
@@ -134,9 +134,13 @@ class AuthorizationScreenViewController: UIViewController, AuthorizationScreenDi
     
     func displayUser() {
         DispatchQueue.main.async {
-            let chatScreenVC = ChatScreenViewController()
+            let chatScreenVC = ChatsScreenViewController()
             self.navigationController?.pushViewController(chatScreenVC, animated: true)
         }
+    }
+    
+    override func dismiss(animated flag: Bool, completion: (() -> Void)? = nil) {
+        super.dismiss(animated: flag, completion: nil)
     }
     
 }
@@ -144,52 +148,76 @@ class AuthorizationScreenViewController: UIViewController, AuthorizationScreenDi
 //MARK: - Layout elements
 extension AuthorizationScreenViewController {
     
-    func layoutSecondLayer() {
+    func layoutThirdLayer() {
         
         // segmentedControl setup
-        backgroudView.addSubview(segmentedControll)
-        segmentedControll.topAnchor.constraint(equalTo: backgroudView.topAnchor).isActive = true
-        //segmentedControll.widthAnchor.constraint(equalToConstant: 40).isActive = true
-        segmentedControll.centerXAnchor.constraint(equalTo: backgroudView.centerXAnchor).isActive = true
+        loginFormBackgroudView.addSubview(segmentedControll)
+        segmentedControll.topAnchor.constraint(equalTo: loginFormBackgroudView.topAnchor).isActive = true
+        segmentedControll.centerXAnchor.constraint(equalTo: loginFormBackgroudView.centerXAnchor).isActive = true
     
         // emailTextField setup
-        backgroudView.addSubview(emailTextField)
-        emailTextField.topAnchor.constraint(equalTo: segmentedControll.bottomAnchor, constant: 5).isActive = true
-        emailTextField.leadingAnchor.constraint(equalTo: backgroudView.leadingAnchor).isActive = true
-        emailTextField.trailingAnchor.constraint(equalTo: backgroudView.trailingAnchor).isActive = true
-        emailTextField.heightAnchor.constraint(equalToConstant: 35).isActive = true
+        loginFormBackgroudView.addSubview(emailTextField)
+        emailTextField.setPlaceHolderWithWhiteColor(text: "Email")
+        emailTextField.textContentType = .emailAddress
+        emailTextField.keyboardType = .emailAddress
+        emailTextField.topAnchor.constraint(equalTo: segmentedControll.bottomAnchor, constant: 15).isActive = true
+        emailTextField.leadingAnchor.constraint(equalTo: loginFormBackgroudView.leadingAnchor).isActive = true
+        emailTextField.trailingAnchor.constraint(equalTo: loginFormBackgroudView.trailingAnchor).isActive = true
+        emailTextField.heightAnchor.constraint(equalToConstant: 45).isActive = true
         
         // nameTextField setup
-        backgroudView.addSubview(nameTextField)
+        loginFormBackgroudView.addSubview(nameTextField)
+        nameTextField.setPlaceHolderWithWhiteColor(text: "Name")
         nameTextField.topAnchor.constraint(equalTo: emailTextField.bottomAnchor, constant: 5).isActive = true
-        nameTextField.leadingAnchor.constraint(equalTo: backgroudView.leadingAnchor).isActive = true
-        nameTextField.trailingAnchor.constraint(equalTo: backgroudView.trailingAnchor).isActive = true
-        nameTextFieldHeightAncor = nameTextField.heightAnchor.constraint(equalToConstant: 35)
+        nameTextField.leadingAnchor.constraint(equalTo: loginFormBackgroudView.leadingAnchor).isActive = true
+        nameTextField.trailingAnchor.constraint(equalTo: loginFormBackgroudView.trailingAnchor).isActive = true
+        nameTextFieldHeightAncor = nameTextField.heightAnchor.constraint(equalToConstant: 45)
         nameTextFieldHeightAncor?.isActive = true
         
         // passwordTextField setup
-        backgroudView.addSubview(passwordTextField)
+        loginFormBackgroudView.addSubview(passwordTextField)
+        passwordTextField.setPlaceHolderWithWhiteColor(text: "Password")
+        passwordTextField.isSecureTextEntry = true
         passwordTextField.topAnchor.constraint(equalTo: nameTextField.bottomAnchor, constant: 5).isActive = true
-        passwordTextField.leadingAnchor.constraint(equalTo: backgroudView.leadingAnchor).isActive = true
-        passwordTextField.trailingAnchor.constraint(equalTo: backgroudView.trailingAnchor).isActive = true
-        passwordTextField.heightAnchor.constraint(equalToConstant: 35).isActive = true
+        passwordTextField.leadingAnchor.constraint(equalTo: loginFormBackgroudView.leadingAnchor).isActive = true
+        passwordTextField.trailingAnchor.constraint(equalTo: loginFormBackgroudView.trailingAnchor).isActive = true
+        passwordTextField.heightAnchor.constraint(equalToConstant: 45).isActive = true
+    }
+    
+    
+    func layoutSecondLayer() {
         
+        // chatIconImageView setup
+        backgroudView.addSubview(chatIconImageView)
+        chatIconImageView.topAnchor.constraint(equalTo: backgroudView.topAnchor, constant: 10).isActive = true
+        chatIconImageView.heightAnchor.constraint(equalToConstant: 150).isActive = true
+        chatIconImageView.widthAnchor.constraint(equalToConstant: 150).isActive = true
+        chatIconImageView.centerXAnchor.constraint(equalTo: backgroudView.centerXAnchor).isActive = true
+        
+        // loginFormBackgroudView setup
+        backgroudView.addSubview(loginFormBackgroudView)
+        loginFormBackgroudView.centerXAnchor.constraint(equalTo: backgroudView.centerXAnchor).isActive = true
+        loginFormBackgroudView.topAnchor.constraint(equalTo: chatIconImageView.bottomAnchor, constant: 25).isActive = true
+        loginFormBackgroudView.leadingAnchor.constraint(equalTo: backgroudView.leadingAnchor, constant: 10).isActive = true
+        loginFormBackgroudView.trailingAnchor.constraint(equalTo: backgroudView.trailingAnchor, constant: -10).isActive = true
+        loginFormBackgroudView.heightAnchor.constraint(equalToConstant: 200).isActive = true
+        
+        // loginButton setup
+        backgroudView.addSubview(loginButton)
+        loginButton.topAnchor.constraint(equalTo: loginFormBackgroudView.bottomAnchor, constant: 10).isActive = true
+        loginButton.heightAnchor.constraint(equalToConstant: 50).isActive = true
+        loginButton.widthAnchor.constraint(equalToConstant: UIScreen.main.bounds.width/1.2).isActive = true
+        loginButton.centerXAnchor.constraint(equalTo: loginFormBackgroudView.centerXAnchor).isActive = true
+    
     }
     
     func layoutFirstLayer() {
         view.addSubview(backgroudView)
         backgroudView.centerXAnchor.constraint(equalTo: view.centerXAnchor).isActive = true
         backgroudView.centerYAnchor.constraint(equalTo: view.centerYAnchor).isActive = true
-        backgroudView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 10).isActive = true
-        backgroudView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -10).isActive = true
-        backgroudView.heightAnchor.constraint(equalToConstant: 200).isActive = true
-        
-        // loginButton setup
-        view.addSubview(loginButton)
-        loginButton.topAnchor.constraint(equalTo: backgroudView.bottomAnchor, constant: 10).isActive = true
-        loginButton.heightAnchor.constraint(equalToConstant: 30).isActive = true
-        loginButton.centerXAnchor.constraint(equalTo: backgroudView.centerXAnchor).isActive = true
+        backgroudView.leadingAnchor.constraint(equalTo: view.leadingAnchor).isActive = true
+        backgroudView.trailingAnchor.constraint(equalTo: view.trailingAnchor).isActive = true
+        backgroudView.heightAnchor.constraint(equalToConstant: 500).isActive = true
     }
-    
     
 }

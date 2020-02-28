@@ -78,6 +78,10 @@ class ListOfUsersViewController: UIViewController, ListOfUsersDisplayLogic {
         router.viewController = viewController
         router.dataStore = interactor
     }
+    
+    override func dismiss(animated flag: Bool, completion: (() -> Void)? = nil) {
+        super.dismiss(animated: flag, completion: nil)
+    }
 }
 
 
@@ -94,7 +98,14 @@ extension ListOfUsersViewController: UITableViewDelegate, UITableViewDataSource 
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "usersCell", for: indexPath) as! ListOfUsersTableViewCell
         guard let userViewModel = usersViewModel?[indexPath.row] else { return UITableViewCell() }
-        cell.setupElements(with: userViewModel)
+        cell.setupUserElements(with: userViewModel)
         return cell
+    }
+    
+    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        guard let user = usersViewModel?[indexPath.row] else { return }
+        let vc = ChatScreenViewController()
+        vc.user = user
+        navigationController?.pushViewController(vc, animated: true)
     }
 }

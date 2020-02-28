@@ -58,7 +58,7 @@ class AuthorizationScreenInteractor: AuthorizationScreenBusinessLogic, Authoriza
             }
             self.presenter?.presentUser()
         }
-    }
+    }   
     
     func checkIfUserAvailable(requset: AuthorizationScreen.CheckIfUserAvailable.Request) {
         Auth.auth().addStateDidChangeListener { [weak self] (auth, user) in
@@ -71,12 +71,11 @@ class AuthorizationScreenInteractor: AuthorizationScreenBusinessLogic, Authoriza
     func login(request: AuthorizationScreen.Login.Request) {
         guard let email = request.userEmail, let password = request.userPassword
         else { return }
-        Auth.auth().signIn(withEmail: email, password: password) { [unowned self] (result, error) in
+        Auth.auth().signIn(withEmail: email, password: password) { (result, error) in
             if let error = error {
                 print(error)
                 return
             }
-            self.presenter?.presentUser()
         }
     }
     
@@ -87,7 +86,7 @@ class AuthorizationScreenInteractor: AuthorizationScreenBusinessLogic, Authoriza
         case "login":
             newsHeightForTextField = 0
         case "registration":
-            newsHeightForTextField = 35
+            newsHeightForTextField = 45
         default:
             return
         }

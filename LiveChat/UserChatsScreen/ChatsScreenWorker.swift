@@ -12,7 +12,7 @@
 
 import UIKit
 
-class ChatScreenWorker {
+class ChatsScreenWorker {
     func doSomeWork() {
     }
 }

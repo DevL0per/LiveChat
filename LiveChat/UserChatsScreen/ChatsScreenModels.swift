@@ -12,7 +12,7 @@
 
 import UIKit
 
-enum ChatScreen {
+enum ChatsScreen {
     // MARK: Use cases
     
     enum FetchUserName {
@@ -36,6 +36,28 @@ enum ChatScreen {
         }
         
         struct ViewModel {
+        }
+    }
+    
+    enum FetchMessages {
+        struct Request {
+            let messagesDictionary: [String: ChatsScreen.FetchMessages.ViewModel.MessagesViewModel]
+        }
+        
+        struct Response {
+            let messagesDictionary: [String: ChatsScreen.FetchMessages.ViewModel.MessagesViewModel]
+            let message: Message
+            let fromUserId: String
+        }
+        
+        struct ViewModel {
+            let messagesDictionary: [String: ChatsScreen.FetchMessages.ViewModel.MessagesViewModel]
+            
+            struct MessagesViewModel {
+                let text: String
+                let fromUserName: String
+                let date: String
+            }
         }
     }
 }

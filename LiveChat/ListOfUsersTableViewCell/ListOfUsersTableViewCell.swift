@@ -10,7 +10,7 @@ import UIKit
 
 class ListOfUsersTableViewCell: UITableViewCell {
     
-    private let emailLabel: UILabel = {
+    private let bottomLabel: UILabel = {
         let label = UILabel()
         label.font = UIFont.systemFont(ofSize: 12)
         label.translatesAutoresizingMaskIntoConstraints = false
@@ -39,9 +39,15 @@ class ListOfUsersTableViewCell: UITableViewCell {
         fatalError("init(coder:) has not been implemented")
     }
     
-    func setupElements(with userInfo: ListOfUsers.FetchUsers.ViewModel.UserViewModel) {
+    func setupUserElements(with userInfo: ListOfUsers.FetchUsers.ViewModel.UserViewModel) {
         nameLabel.text = userInfo.userName
-        emailLabel.text = userInfo.userEmail
+        bottomLabel.text = userInfo.userEmail
+        imageView?.image = UIImage(named: "userImage")
+    }
+    
+    func setupUserMessages(with messageInfo: ChatsScreen.FetchMessages.ViewModel.MessagesViewModel) {
+        nameLabel.text = messageInfo.fromUserName
+        bottomLabel.text = messageInfo.text
         imageView?.image = UIImage(named: "userImage")
     }
     
@@ -60,9 +66,9 @@ class ListOfUsersTableViewCell: UITableViewCell {
         nameLabel.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -5).isActive = true
         
         // emailLabel layout
-        addSubview(emailLabel)
-        emailLabel.topAnchor.constraint(equalTo: nameLabel.bottomAnchor, constant: 2).isActive = true
-        emailLabel.leadingAnchor.constraint(equalTo: photoImageView.trailingAnchor, constant: 5).isActive = true
-        emailLabel.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -5).isActive = true
+        addSubview(bottomLabel)
+        bottomLabel.topAnchor.constraint(equalTo: nameLabel.bottomAnchor, constant: 2).isActive = true
+        bottomLabel.leadingAnchor.constraint(equalTo: photoImageView.trailingAnchor, constant: 5).isActive = true
+        bottomLabel.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -5).isActive = true
     }
 }

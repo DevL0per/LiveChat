@@ -30,7 +30,9 @@ enum ListOfUsers {
             struct UserViewModel {
                 let userName: String
                 let userEmail: String
+                let userId: String
             }
         }
     }
+    
 }

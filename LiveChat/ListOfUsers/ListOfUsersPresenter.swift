@@ -11,6 +11,7 @@
 //
 
 import UIKit
+import Firebase
 
 protocol ListOfUsersPresentationLogic {
     func presentUsers(response: ListOfUsers.FetchUsers.Response)
@@ -26,10 +27,12 @@ class ListOfUsersPresenter: ListOfUsersPresentationLogic {
         var usersViewModel: [ListOfUsers.FetchUsers.ViewModel.UserViewModel] = []
         for item in response.users {
             let userViewModel = ListOfUsers.FetchUsers.ViewModel.UserViewModel(userName: item.name,
-                                                                               userEmail: item.email)
+                                                                               userEmail: item.email,
+                                                                               userId: item.id)
             usersViewModel.append(userViewModel)
         }
         let viewModel = ListOfUsers.FetchUsers.ViewModel(users: usersViewModel)
         viewController?.displayUsers(viewModel: viewModel)
     }
+    
 }
