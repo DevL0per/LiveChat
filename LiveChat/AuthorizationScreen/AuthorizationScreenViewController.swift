@@ -12,8 +12,17 @@
 
 import UIKit
 
+fileprivate struct Constants {
+    static let textFieldsHeight: CGFloat = 45
+    static let backgroudViewHeight: CGFloat = 500
+    static let chatIconImageViewHeight: CGFloat = 150
+    static let chatIconImageViewWidth: CGFloat = 150
+    static let loginFormBackgroudViewHeightz: CGFloat = 200
+}
+
 protocol AuthorizationScreenDisplayLogic: class {
-    func displayUser()
+    func displayUser(viewModel: AuthorizationScreen.Login.ViewModel)
+    func displayNewUser(viewModel: AuthorizationScreen.SaveUser.ViewModel)
     func displayNameTextFieldNewsHeight(viewModel: AuthorizationScreen.ChangeTextFieldHeight.ViewModel)
 }
 
@@ -24,7 +33,6 @@ class AuthorizationScreenViewController: UIViewController, AuthorizationScreenDi
     var interactor: AuthorizationScreenBusinessLogic?
     
     var nameTextFieldHeightAncor: NSLayoutConstraint?
-    
     
     // MARK: - Properties
     let loginFormBackgroudView: UIView = {
@@ -50,7 +58,9 @@ class AuthorizationScreenViewController: UIViewController, AuthorizationScreenDi
         let items = ["login", "registration"]
         let segmentedControll = UISegmentedControl(items: items)
         segmentedControll.translatesAutoresizingMaskIntoConstraints = false
+        segmentedControll.tintColor = .white
         segmentedControll.backgroundColor = #colorLiteral(red: 0.9333333333, green: 0.3882352941, blue: 0.631372549, alpha: 1)
+        segmentedControll.clipsToBounds = true
         segmentedControll.selectedSegmentIndex = 1
         segmentedControll.addTarget(self, action: #selector(segmentedControlledWasPressed), for: .valueChanged)
         return segmentedControll
@@ -77,14 +87,34 @@ class AuthorizationScreenViewController: UIViewController, AuthorizationScreenDi
         view.backgroundColor = #colorLiteral(red: 0.2598086596, green: 0.2304657698, blue: 0.3598444462, alpha: 1)
         navigationController?.setNavigationBarHidden(true, animated: false)
         configurator.setup(viewController: self)
+        setupTextFields()
         layoutFirstLayer()
         layoutSecondLayer()
         layoutThirdLayer()
         interactor?.checkIfUserAvailable(requset: AuthorizationScreen.CheckIfUserAvailable.Request())
     }
     
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        NotificationCenter.default.removeObserver(self)
+    }
+    
     override func viewWillAppear(_ animated: Bool) {
         navigationController?.setNavigationBarHidden(true, animated: false)
+        addKeyboardObserver()
+        
+        tabBarController?.tabBar.isHidden = true
+        emailTextField.text = ""
+        nameTextField.text = ""
+        passwordTextField.text = ""
+    }
+    
+    override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
+        view.endEditing(true)
+    }
+    
+    override func dismiss(animated flag: Bool, completion: (() -> Void)? = nil) {
+        super.dismiss(animated: flag, completion: nil)
     }
     
     func displayNameTextFieldNewsHeight(viewModel: AuthorizationScreen.ChangeTextFieldHeight.ViewModel) {
@@ -94,11 +124,26 @@ class AuthorizationScreenViewController: UIViewController, AuthorizationScreenDi
         nameTextFieldHeightAncor?.isActive = true
     }
     
-    private func login() {
-        let userEmail = emailTextField.text
-        let userPassword = passwordTextField.text
-        interactor?.login(request: AuthorizationScreen.Login.Request(userEmail: userEmail,
-                                                                     userPassword: userPassword))
+    func displayUser(viewModel: AuthorizationScreen.Login.ViewModel) {
+        if let error = viewModel.error {
+            let alert = AlertControllerManager.shared.createAlertController(title: "ERROR", subtitle: error)
+            present(alert, animated: true, completion: nil)
+        } else {
+            DispatchQueue.main.async {
+                let chatScreenVC = ChatsScreenViewController()
+                self.navigationController?.pushViewController(chatScreenVC, animated: true)
+            }
+        }
+    }
+    
+    func displayNewUser(viewModel: AuthorizationScreen.SaveUser.ViewModel) {
+        if let errorMessage = viewModel.errorMessage {
+            let alert = AlertControllerManager.shared.createAlertController(title: "ERROR",
+                                                                subtitle: errorMessage)
+            present(alert, animated: true, completion: nil)
+        } else {
+            displayUser(viewModel: AuthorizationScreen.Login.ViewModel(error: nil))
+        }
     }
     
     @objc private func segmentedControlledWasPressed() {
@@ -115,11 +160,50 @@ class AuthorizationScreenViewController: UIViewController, AuthorizationScreenDi
         switch title {
         case "LOGIN":
             login()
-        case "REGISTRAION":
+        case "REGISTRATION":
             saveUser()
         default:
             return
         }
+    }
+    
+    private func setupTextFields() {
+        emailTextField.delegate = self
+        emailTextField.returnKeyType = .next
+        
+        nameTextField.delegate = self
+        nameTextField.returnKeyType = .next
+        
+        passwordTextField.delegate = self
+        passwordTextField.returnKeyType = .done
+    }
+    
+    private func addKeyboardObserver() {
+        NotificationCenter.default.addObserver(self, selector: #selector(keyboardWillShow),
+                                               name: UIResponder.keyboardWillShowNotification,
+                                               object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(keyboardWillHide),
+        name: UIResponder.keyboardWillHideNotification, object: nil)
+    }
+    
+    @objc private func keyboardWillShow(_ notification: Notification) {
+        
+        if let frame = notification.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? NSValue {
+            if view.frame.origin.y == 0 {
+                view.frame.origin.y -= frame.cgRectValue.height
+            }
+        }
+    }
+    
+    private func login() {
+        let userEmail = emailTextField.text
+        let userPassword = passwordTextField.text
+        interactor?.login(request: AuthorizationScreen.Login.Request(userEmail: userEmail,
+                                                                     userPassword: userPassword))
+    }
+    
+    @objc private func keyboardWillHide(_ notification: Notification) {
+        view.frame.origin.y = 0
     }
     
     private func saveUser() {
@@ -130,17 +214,6 @@ class AuthorizationScreenViewController: UIViewController, AuthorizationScreenDi
                                                            userName: userName,
                                                            userPassword: userPassword)
         interactor?.saveUser(request: request)
-    }
-    
-    func displayUser() {
-        DispatchQueue.main.async {
-            let chatScreenVC = ChatsScreenViewController()
-            self.navigationController?.pushViewController(chatScreenVC, animated: true)
-        }
-    }
-    
-    override func dismiss(animated flag: Bool, completion: (() -> Void)? = nil) {
-        super.dismiss(animated: flag, completion: nil)
     }
     
 }
@@ -163,7 +236,7 @@ extension AuthorizationScreenViewController {
         emailTextField.topAnchor.constraint(equalTo: segmentedControll.bottomAnchor, constant: 15).isActive = true
         emailTextField.leadingAnchor.constraint(equalTo: loginFormBackgroudView.leadingAnchor).isActive = true
         emailTextField.trailingAnchor.constraint(equalTo: loginFormBackgroudView.trailingAnchor).isActive = true
-        emailTextField.heightAnchor.constraint(equalToConstant: 45).isActive = true
+        emailTextField.heightAnchor.constraint(equalToConstant: Constants.textFieldsHeight).isActive = true
         
         // nameTextField setup
         loginFormBackgroudView.addSubview(nameTextField)
@@ -171,7 +244,7 @@ extension AuthorizationScreenViewController {
         nameTextField.topAnchor.constraint(equalTo: emailTextField.bottomAnchor, constant: 5).isActive = true
         nameTextField.leadingAnchor.constraint(equalTo: loginFormBackgroudView.leadingAnchor).isActive = true
         nameTextField.trailingAnchor.constraint(equalTo: loginFormBackgroudView.trailingAnchor).isActive = true
-        nameTextFieldHeightAncor = nameTextField.heightAnchor.constraint(equalToConstant: 45)
+        nameTextFieldHeightAncor = nameTextField.heightAnchor.constraint(equalToConstant: Constants.textFieldsHeight)
         nameTextFieldHeightAncor?.isActive = true
         
         // passwordTextField setup
@@ -181,7 +254,7 @@ extension AuthorizationScreenViewController {
         passwordTextField.topAnchor.constraint(equalTo: nameTextField.bottomAnchor, constant: 5).isActive = true
         passwordTextField.leadingAnchor.constraint(equalTo: loginFormBackgroudView.leadingAnchor).isActive = true
         passwordTextField.trailingAnchor.constraint(equalTo: loginFormBackgroudView.trailingAnchor).isActive = true
-        passwordTextField.heightAnchor.constraint(equalToConstant: 45).isActive = true
+        passwordTextField.heightAnchor.constraint(equalToConstant: Constants.textFieldsHeight).isActive = true
     }
     
     
@@ -190,8 +263,8 @@ extension AuthorizationScreenViewController {
         // chatIconImageView setup
         backgroudView.addSubview(chatIconImageView)
         chatIconImageView.topAnchor.constraint(equalTo: backgroudView.topAnchor, constant: 10).isActive = true
-        chatIconImageView.heightAnchor.constraint(equalToConstant: 150).isActive = true
-        chatIconImageView.widthAnchor.constraint(equalToConstant: 150).isActive = true
+        chatIconImageView.heightAnchor.constraint(equalToConstant: Constants.chatIconImageViewHeight).isActive = true
+        chatIconImageView.widthAnchor.constraint(equalToConstant: Constants.chatIconImageViewWidth).isActive = true
         chatIconImageView.centerXAnchor.constraint(equalTo: backgroudView.centerXAnchor).isActive = true
         
         // loginFormBackgroudView setup
@@ -200,7 +273,7 @@ extension AuthorizationScreenViewController {
         loginFormBackgroudView.topAnchor.constraint(equalTo: chatIconImageView.bottomAnchor, constant: 25).isActive = true
         loginFormBackgroudView.leadingAnchor.constraint(equalTo: backgroudView.leadingAnchor, constant: 10).isActive = true
         loginFormBackgroudView.trailingAnchor.constraint(equalTo: backgroudView.trailingAnchor, constant: -10).isActive = true
-        loginFormBackgroudView.heightAnchor.constraint(equalToConstant: 200).isActive = true
+        loginFormBackgroudView.heightAnchor.constraint(equalToConstant: Constants.loginFormBackgroudViewHeightz).isActive = true
         
         // loginButton setup
         backgroudView.addSubview(loginButton)
@@ -217,7 +290,26 @@ extension AuthorizationScreenViewController {
         backgroudView.centerYAnchor.constraint(equalTo: view.centerYAnchor).isActive = true
         backgroudView.leadingAnchor.constraint(equalTo: view.leadingAnchor).isActive = true
         backgroudView.trailingAnchor.constraint(equalTo: view.trailingAnchor).isActive = true
-        backgroudView.heightAnchor.constraint(equalToConstant: 500).isActive = true
+        backgroudView.heightAnchor.constraint(equalToConstant: Constants.backgroudViewHeight).isActive = true
     }
     
+}
+
+//MARK: - UITextFieldDelegate
+extension AuthorizationScreenViewController: UITextFieldDelegate {
+    func textFieldShouldReturn(_ textField: UITextField) -> Bool {
+        if textField == emailTextField {
+            if loginButton.titleLabel?.text == "LOGIN" {
+                passwordTextField.becomeFirstResponder()
+            } else {
+                nameTextField.becomeFirstResponder()
+            }
+        } else if textField == nameTextField {
+            passwordTextField.becomeFirstResponder()
+        } else {
+            textField.resignFirstResponder()
+            loginButtonWasPressed()
+        }
+        return true
+    }
 }

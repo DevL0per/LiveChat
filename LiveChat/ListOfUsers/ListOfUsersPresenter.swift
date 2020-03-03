@@ -24,12 +24,16 @@ class ListOfUsersPresenter: ListOfUsersPresentationLogic {
     // MARK: Do something
     
     func presentUsers(response: ListOfUsers.FetchUsers.Response) {
+        guard let userId = Auth.auth().currentUser?.uid else { return }
         var usersViewModel: [ListOfUsers.FetchUsers.ViewModel.UserViewModel] = []
-        for item in response.users {
-            let userViewModel = ListOfUsers.FetchUsers.ViewModel.UserViewModel(userName: item.name,
-                                                                               userEmail: item.email,
-                                                                               userId: item.id)
-            usersViewModel.append(userViewModel)
+        for user in response.users {
+            if user.id != userId {
+                let userViewModel = ListOfUsers.FetchUsers.ViewModel.UserViewModel(userName: user.name,
+                                                                                   userEmail: user.email,
+                                                                                   userImageURL: user.imageURL,
+                                                                                   userId: user.id)
+                usersViewModel.append(userViewModel)
+            }
         }
         let viewModel = ListOfUsers.FetchUsers.ViewModel(users: usersViewModel)
         viewController?.displayUsers(viewModel: viewModel)

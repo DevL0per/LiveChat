@@ -12,6 +12,7 @@ import Firebase
 struct User {
     let name: String
     let email: String
+    let imageURL: String
     let id: String
     
     init(snapshot: DataSnapshot) {
@@ -19,5 +20,6 @@ struct User {
         let dictionary = snapshot.value as? [String: AnyObject]
         name = dictionary?["name"] as! String
         email = dictionary?["email"] as! String
+        imageURL = dictionary?["profileImage"] as! String
     }
 }

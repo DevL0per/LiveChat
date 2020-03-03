@@ -17,15 +17,20 @@ protocol ChatScreenDisplayLogic: class {
     func displayMessage(viewModel: ChatScreen.FetchMessage.ViewModel)
 }
 
+fileprivate struct Constants {
+    static let inputAreaViewHeight: CGFloat = 45
+}
+
 class ChatScreenViewController: UIViewController, ChatScreenDisplayLogic {
     
+    // MARK: - Properties
     lazy var collectionView: UICollectionView = {
         let flowLayout = UICollectionViewFlowLayout()
         let collection = UICollectionView(frame: .zero, collectionViewLayout: flowLayout)
         collection.contentInset = UIEdgeInsets(top: 10, left: 0, bottom: 10, right: 0)
         collection.delegate = self
         collection.backgroundColor = .white
-        collection.keyboardDismissMode = .interactive
+        collection.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(tableViewWasPressed)))
         collection.dataSource = self
         collection.backgroundColor = .black
         collection.alwaysBounceVertical = true
@@ -33,6 +38,8 @@ class ChatScreenViewController: UIViewController, ChatScreenDisplayLogic {
         collection.register(ChatScreenWithUserCollectionViewCell.self, forCellWithReuseIdentifier: "messageCell")
         return collection
     }()
+    
+    private let chatScreenNavigationBarView = UserProfileNavigationBarView()
     
     private lazy var startImageView: UIImageView = {
         let imageView = UIImageView()
@@ -55,7 +62,7 @@ class ChatScreenViewController: UIViewController, ChatScreenDisplayLogic {
     
     private lazy var inputAreaView: UIView = {
         let inputAreaView = UIView()
-        inputAreaView.frame = CGRect(x: 0, y: 0, width: view.bounds.width, height: 45)
+        inputAreaView.frame = CGRect(x: 0, y: 0, width: view.bounds.width, height: Constants.inputAreaViewHeight)
         //sendMessage layout
         inputAreaView.addSubview(sendMessageButton)
         sendMessageButton.trailingAnchor.constraint(equalTo: inputAreaView.trailingAnchor).isActive = true
@@ -85,16 +92,19 @@ class ChatScreenViewController: UIViewController, ChatScreenDisplayLogic {
         button.addTarget(self, action: #selector(imagePickerButtonWasPressed), for: .touchUpInside)
         return button
     }()
+    private var keyboardHeight: CGFloat!
     var interactor: ChatScreenBusinessLogic?
     var router: (NSObjectProtocol & ChatScreenRoutingLogic & ChatScreenDataPassing)?
     
     var user: ListOfUsers.FetchUsers.ViewModel.UserViewModel!
     var messagesViewModel: [ChatScreen.FetchMessage.ViewModel.MessageViewModel] = []
     
-    private let messageTextField: UITextField = {
+    private lazy var messageTextField: UITextField = {
         let textField = UITextField()
         textField.backgroundColor = #colorLiteral(red: 0.1333177388, green: 0.1333433092, blue: 0.1333121657, alpha: 1)
         textField.textColor = .white
+        textField.returnKeyType = .send
+        textField.delegate = self
         textField.keyboardAppearance = .dark
         textField.attributedPlaceholder = NSAttributedString(string: "print your text here...",
                                                              attributes: [NSAttributedString.Key.foregroundColor: UIColor.white])
@@ -111,12 +121,25 @@ class ChatScreenViewController: UIViewController, ChatScreenDisplayLogic {
         return button
     }()
     
+    //MARK: - Methods
     override func viewDidLoad() {
         super.viewDidLoad()
+        navigationItem.titleView = chatScreenNavigationBarView
         setup()
-        setupNavigationController()
         setupCollectionView()
         interactor?.fetchMessage(request: ChatScreen.FetchMessage.Request(fromUserId: user.userId))
+    }
+    
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        tabBarController?.tabBar.isHidden = true
+        chatScreenNavigationBarView.setupElements(title: user.userName, imageURL: user.userImageURL)
+        setKeyboardNotitification()
+    }
+    
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        NotificationCenter.default.removeObserver(self)
     }
     
     override var canBecomeFirstResponder: Bool {
@@ -129,15 +152,8 @@ class ChatScreenViewController: UIViewController, ChatScreenDisplayLogic {
         }
     }
     
-    // MARK: Routing
-    
-    override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
-        if let scene = segue.identifier {
-            let selector = NSSelectorFromString("routeTo\(scene)WithSegue:")
-            if let router = router, router.responds(to: selector) {
-                router.perform(selector, with: segue)
-            }
-        }
+    @objc private func tableViewWasPressed() {
+        messageTextField.resignFirstResponder()
     }
     
     func messageWasSended(viewModel: ChatScreen.SendMessage.ViewModel) {
@@ -152,9 +168,9 @@ class ChatScreenViewController: UIViewController, ChatScreenDisplayLogic {
     }
     
     @objc private func sendButtonWasPressed() {
-        guard let messageText = messageTextField.text, !messageText.isEmpty else { return }
-        let request = ChatScreen.SendMessage.Request(text: messageText, toId: user.userId)
+        let request = ChatScreen.SendMessage.Request(text: messageTextField.text, toId: user.userId)
         interactor?.sendMessage(request: request)
+        messageTextField.text = ""
     }
     
     @objc private func imagePickerButtonWasPressed() {
@@ -167,12 +183,31 @@ class ChatScreenViewController: UIViewController, ChatScreenDisplayLogic {
         present(imagePicherController, animated: true, completion: nil)
     }
     
-    private func setupNavigationController() {
-        navigationController?.navigationBar.barTintColor = .black
-        navigationController?.navigationBar.barStyle = .black
-        navigationController?.navigationBar.titleTextAttributes = [.foregroundColor: UIColor.white]
-        navigationController?.navigationBar.tintColor = .white
-        title = user.userName
+    private func setKeyboardNotitification() {
+        NotificationCenter.default.addObserver(self, selector: #selector(keyboardWillShow),
+                                               name: UIResponder.keyboardWillShowNotification, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(keyboardWillHide),
+        name: UIResponder.keyboardWillHideNotification, object: nil)
+    }
+    
+    @objc private func keyboardWillShow(_ notification: Notification) {
+        if let frame = notification.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? NSValue,
+            frame.cgRectValue.height != Constants.inputAreaViewHeight  {
+            keyboardHeight = frame.cgRectValue.height
+            collectionView.contentInset.bottom += keyboardHeight-Constants.inputAreaViewHeight
+            let indexPath = IndexPath(item: messagesViewModel.count-1, section: 0)
+            collectionView.scrollToItem(at: indexPath, at: .bottom, animated: true)
+        }
+        
+    }
+    
+    @objc private func keyboardWillHide(_ notification: Notification) {
+        if collectionView.contentInset.bottom != 10 {
+            collectionView.contentInset.bottom = 10
+        }
+        if startImageFrame != nil {
+            startImageFrame.origin.y -= keyboardHeight
+        }
     }
     
     private func setupCollectionView() {
@@ -203,9 +238,10 @@ class ChatScreenViewController: UIViewController, ChatScreenDisplayLogic {
             self.startImageView.layer.cornerRadius = 5
             self.backgroundViewForZoomingImage.alpha = 0
             self.inputAreaView.alpha = 1
-        }) { [unowned self] (flag) in
+        }) { (flag) in
             self.startImageView.removeFromSuperview()
             self.backgroundViewForZoomingImage.removeFromSuperview()
+            self.startImageFrame = nil
         }
     }
     
@@ -214,6 +250,7 @@ class ChatScreenViewController: UIViewController, ChatScreenDisplayLogic {
     }
 }
 
+//MARK: - UICollectionViewDelegate, UICollectionViewDataSource, UICollectionViewDelegateFlowLayout
 extension ChatScreenViewController: UICollectionViewDelegate, UICollectionViewDataSource, UICollectionViewDelegateFlowLayout,
 ChatScreenWithUserCollectionViewCellDelegate {
     
@@ -226,7 +263,7 @@ ChatScreenWithUserCollectionViewCellDelegate {
         let messageViewModel = messagesViewModel[indexPath.row]
         cell.setupElements(with: messageViewModel)
         cell.delegate = self
-        cell.setTextMessageWidth(with: messagesViewModel[indexPath.row].messageSize.width+10)
+        cell.setTextMessageWidth(with: messagesViewModel[indexPath.row].messageSize.width+13)
         return cell
     }
     
@@ -274,5 +311,13 @@ extension ChatScreenViewController: UIImagePickerControllerDelegate, UINavigatio
         guard let selectedImage = optionalSelectedImage else { return }
         interactor?.sendImage(request: ChatScreen.SendImage.Request(image: selectedImage, toId: user.userId))
         picker.dismiss(animated: true, completion: nil)
+    }
+}
+
+extension ChatScreenViewController: UITextFieldDelegate {
+    func textFieldShouldReturn(_ textField: UITextField) -> Bool {
+        interactor?.sendMessage(request: ChatScreen.SendMessage.Request(text: textField.text, toId: user.userId))
+        textField.text = ""
+        return true
     }
 }

@@ -14,7 +14,8 @@ class AuthorizationScreenTextField: TextFieldWithInsets {
         clipsToBounds = true
         layer.cornerRadius = 15
         textColor = .white
-        backgroundColor = #colorLiteral(red: 0.214992702, green: 0.191875726, blue: 0.2948668301, alpha: 1)
+        autocorrectionType = .no
+        backgroundColor = #colorLiteral(red: 0.2156862745, green: 0.1921568627, blue: 0.2941176471, alpha: 1)
         translatesAutoresizingMaskIntoConstraints = false
     }
     

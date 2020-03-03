@@ -13,7 +13,8 @@
 import UIKit
 
 protocol AuthorizationScreenPresentationLogic {
-    func presentUser()
+    func presentUser(response: AuthorizationScreen.Login.Response)
+    func presentNewUser(response: AuthorizationScreen.SaveUser.Response)
     func presentNewTextFieldHeight(response: AuthorizationScreen.ChangeTextFieldHeight.Response)
 }
 
@@ -23,8 +24,17 @@ class AuthorizationScreenPresenter: AuthorizationScreenPresentationLogic {
     
     // MARK: Do something
     
-    func presentUser() {
-        viewController?.displayUser()
+    func presentUser(response: AuthorizationScreen.Login.Response) {
+        viewController?.displayUser(viewModel: AuthorizationScreen.Login.ViewModel(error: response.error))
+    }
+    
+    func presentNewUser(response: AuthorizationScreen.SaveUser.Response) {
+        if let error = response.textError {
+            let viewModel = AuthorizationScreen.SaveUser.ViewModel(errorMessage: error.description)
+            viewController?.displayNewUser(viewModel: viewModel)
+        } else {
+            viewController?.displayNewUser(viewModel: AuthorizationScreen.SaveUser.ViewModel(errorMessage: nil))
+        }
     }
     
     func presentNewTextFieldHeight(response: AuthorizationScreen.ChangeTextFieldHeight.Response) {

@@ -27,14 +27,16 @@ class ChatScreenInteractor: ChatScreenBusinessLogic, ChatScreenDataStore {
     var presenter: ChatScreenPresentationLogic?
     var worker = ChatScreenWorker()
     
+    var firebaseManager = FirebaseManager()
+    
     // MARK: Do something
     
     func sendMessage(request: ChatScreen.SendMessage.Request) {
-        
         guard let userId = Auth.auth().currentUser?.uid else { return }
+        guard let messageText = request.text, !messageText.isEmpty else { return }
         let date = Int(NSDate().timeIntervalSince1970)
         let dictionary = ["fromId": userId, "toId": request.toId,
-                          "text": request.text, "date": date] as [String : Any]
+                          "text": messageText, "date": date] as [String : Any]
         worker.sendMessage(fromUserId: userId, toUserId: request.toId, dictionary: dictionary)
         let response = ChatScreen.SendMessage.Response()
         self.presenter?.presentMessage(response: response)
@@ -55,24 +57,18 @@ class ChatScreenInteractor: ChatScreenBusinessLogic, ChatScreenDataStore {
     }
     
     func sendImage(request: ChatScreen.SendImage.Request) {
-        guard let userId = Auth.auth().currentUser?.uid,
-              let jpegData = request.image.jpegData(compressionQuality: 0.2) else { return }
-        let imageId = NSUUID().uuidString
-        let ref = Storage.storage().reference().child("messagesImages").child(imageId)
-        ref.putData(jpegData, metadata: nil) { [weak self] (metadata, error) in
-            if let error = error {
-                print(error)
-                return
-            }
-            ref.downloadURL { (url, error) in
-                guard let url = url else { return }
-                let date = Int(NSDate().timeIntervalSince1970)
-                let imageSizes = request.image.size
-                let dictionary = ["fromId": userId, "toId": request.toId,
-                                  "imageURL": url.absoluteString, "imageHeight": imageSizes.height,
-                                  "imageWidth": imageSizes.width, "date": date] as [String : Any]
-                self?.worker.sendMessage(fromUserId: userId, toUserId: request.toId, dictionary: dictionary)
-            }
+        
+        guard let userId = Auth.auth().currentUser?.uid else { return }
+        
+        firebaseManager.saveImageInStorage(withPath: "messagesImages",
+                                           image: request.image) { [weak self] (url, error) in
+            guard let url = url else { return }
+            let date = Int(NSDate().timeIntervalSince1970)
+            let imageSizes = request.image.size
+            let dictionary = ["fromId": userId, "toId": request.toId,
+                              "imageURL": url.absoluteString, "imageHeight": imageSizes.height,
+                              "imageWidth": imageSizes.width, "date": date] as [String : Any]
+            self?.worker.sendMessage(fromUserId: userId, toUserId: request.toId, dictionary: dictionary)
         }
     }
 }

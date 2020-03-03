@@ -23,9 +23,11 @@ enum AuthorizationScreen {
         }
         
         struct Response {
+            let textError: TextError?
         }
         
         struct ViewModel {
+            let errorMessage: String?
         }
     }
     
@@ -36,9 +38,11 @@ enum AuthorizationScreen {
         }
         
         struct Response {
+            let error: String?
         }
         
         struct ViewModel {
+            let error: String?
         }
     }
     

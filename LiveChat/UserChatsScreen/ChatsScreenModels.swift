@@ -15,7 +15,7 @@ import UIKit
 enum ChatsScreen {
     // MARK: Use cases
     
-    enum FetchUserName {
+    enum FetchCurrentUser {
         struct Request {
         }
         
@@ -24,7 +24,7 @@ enum ChatsScreen {
         }
         
         struct ViewModel {
-            let userName: String
+            let userViewModel: ListOfUsers.FetchUsers.ViewModel.UserViewModel
         }
     }
     
@@ -41,23 +41,39 @@ enum ChatsScreen {
     
     enum FetchMessages {
         struct Request {
-            let messagesDictionary: [String: ChatsScreen.FetchMessages.ViewModel.MessagesViewModel]
         }
         
         struct Response {
-            let messagesDictionary: [String: ChatsScreen.FetchMessages.ViewModel.MessagesViewModel]
             let message: Message
             let fromUserId: String
+            let profileImageURL: String
         }
         
         struct ViewModel {
-            let messagesDictionary: [String: ChatsScreen.FetchMessages.ViewModel.MessagesViewModel]
+            let key: String
+            let value: ChatsScreen.FetchMessages.ViewModel.MessagesViewModel
             
             struct MessagesViewModel {
                 let text: String
                 let fromUserName: String
+                let profileImageURL: String
+                let fromUserId: String
                 let date: String
             }
+        }
+    }
+    
+    enum FetchUserToStartChating {
+        struct Request {
+            let userId: String
+        }
+        
+        struct Response {
+            let user: User
+        }
+        
+        struct ViewModel {
+            let userViewModel: ListOfUsers.FetchUsers.ViewModel.UserViewModel
         }
     }
 }

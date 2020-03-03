@@ -12,52 +12,74 @@
 
 import UIKit
 
+fileprivate struct Constants {
+    static let tableViewCellHeight: CGFloat = 60
+}
+
 protocol ChatsScreenDisplayLogic: class {
     func displayLoginScreen(viewModel: ChatsScreen.Logout.ViewModel)
-    func displayUserName(viewModel: ChatsScreen.FetchUserName.ViewModel)
+    func displayCurrentUser(viewModel: ChatsScreen.FetchCurrentUser.ViewModel)
     func displayMessages(viewModel: ChatsScreen.FetchMessages.ViewModel)
+    func startChatWithUser(viewModel: ChatsScreen.FetchUserToStartChating.ViewModel)
 }
 
 class ChatsScreenViewController: UIViewController, ChatsScreenDisplayLogic {
     
+    // MARK: - Properties
     var interactor: ChatsScreenBusinessLogic?
+    var configurator: UserChatsScreenConfiguratorProtocol = UserChatsScreenConfigurator()
+    
     var router: (NSObjectProtocol & ChatsScreenRoutingLogic & ChatsScreenDataPassing)?
     var messagesTableView: UITableView = {
         let tableView = UITableView()
         tableView.translatesAutoresizingMaskIntoConstraints = false
         return tableView
     }()
+    
+    let selectedBackgroundView: UIView = {
+        let view = UIView()
+        view.backgroundColor = .clear
+        return view
+    }()
+    
+    private let userProfileNavigationBarView = UserProfileNavigationBarView()
+    
     private var messagesDictionarys: [String: ChatsScreen.FetchMessages.ViewModel.MessagesViewModel] = [:]
     private var messagesViewModel: [ChatsScreen.FetchMessages.ViewModel.MessagesViewModel]?
     
+    // MARK: - Methods
     override func viewDidLoad() {
         super.viewDidLoad()
-        navigationController?.setNavigationBarHidden(false, animated: false)
-        setup()
+        configurator.configure(viewController: self)
+        setupNavigationController()
         setupNavigationItemLeftButton()
         setupNavigationItemRightButton()
         setupMessagesTableView()
-        interactor?.fetchUserName(request: ChatsScreen.FetchUserName.Request())
-        interactor?.fetchMessages(request: ChatsScreen.FetchMessages.Request(messagesDictionary: messagesDictionarys))
+        interactor?.fetchMessages(request: ChatsScreen.FetchMessages.Request())
     }
     
-    override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
-        if let scene = segue.identifier {
-            let selector = NSSelectorFromString("routeTo\(scene)WithSegue:")
-            if let router = router, router.responds(to: selector) {
-                router.perform(selector, with: segue)
-            }
-        }
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        interactor?.fetchCurrentUser(request: ChatsScreen.FetchCurrentUser.Request())
+        navigationController?.setNavigationBarHidden(false, animated: false)
+        tabBarController?.tabBar.isHidden = false
+    }
+    
+    func startChatWithUser(viewModel: ChatsScreen.FetchUserToStartChating.ViewModel) {
+        let vc = ChatScreenViewController()
+        vc.user = viewModel.userViewModel
+        navigationController?.pushViewController(vc, animated: true)
     }
     
     func displayMessages(viewModel: ChatsScreen.FetchMessages.ViewModel) {
-        messagesDictionarys = viewModel.messagesDictionary
+        messagesDictionarys[viewModel.key] = viewModel.value
         messagesViewModel = Array(messagesDictionarys.values)
         messagesTableView.reloadData()
     }
     
-    func displayUserName(viewModel: ChatsScreen.FetchUserName.ViewModel) {
-        navigationItem.title = viewModel.userName
+    func displayCurrentUser(viewModel: ChatsScreen.FetchCurrentUser.ViewModel) {
+        userProfileNavigationBarView.setupElements(title: viewModel.userViewModel.userName,
+                                                   imageURL: viewModel.userViewModel.userImageURL)
     }
     
     func displayLoginScreen(viewModel: ChatsScreen.Logout.ViewModel) {
@@ -85,8 +107,10 @@ class ChatsScreenViewController: UIViewController, ChatsScreenDisplayLogic {
     
     private func setupMessagesTableView() {
         view.addSubview(messagesTableView)
+        messagesTableView.tableFooterView = UIView()
         messagesTableView.dataSource = self
         messagesTableView.delegate = self
+        messagesTableView.backgroundColor = .black
         messagesTableView.register(ListOfUsersTableViewCell.self, forCellReuseIdentifier: "messagesCell")
         
         messagesTableView.topAnchor.constraint(equalTo: view.topAnchor).isActive = true
@@ -95,20 +119,16 @@ class ChatsScreenViewController: UIViewController, ChatsScreenDisplayLogic {
         messagesTableView.leadingAnchor.constraint(equalTo: view.leadingAnchor).isActive = true
     }
     
-    private func setup() {
-        let viewController = self
-        let interactor = ChatsScreenInteractor()
-        let presenter = ChatsScreenPresenter()
-        let router = ChatsScreenRouter()
-        viewController.interactor = interactor
-        viewController.router = router
-        interactor.presenter = presenter
-        presenter.viewController = viewController
-        router.viewController = viewController
-        router.dataStore = interactor
+    private func setupNavigationController() {
+        navigationItem.titleView = userProfileNavigationBarView
+        navigationController?.navigationBar.barTintColor = .black
+        navigationController?.navigationBar.barStyle = .black
+        navigationController?.navigationBar.titleTextAttributes = [.foregroundColor: UIColor.white]
+        navigationController?.navigationBar.tintColor = .white
     }
 }
 
+//MARK: - UITableViewDelegate, UITableViewDataSource
 extension ChatsScreenViewController: UITableViewDelegate, UITableViewDataSource {
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         return messagesViewModel?.count ?? 0
@@ -116,16 +136,20 @@ extension ChatsScreenViewController: UITableViewDelegate, UITableViewDataSource 
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "messagesCell") as! ListOfUsersTableViewCell
+        cell.selectedBackgroundView = selectedBackgroundView
         guard let messageViewModel = messagesViewModel?[indexPath.row] else { return UITableViewCell() }
         cell.setupUserMessages(with: messageViewModel)
         return cell
     }
     
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        
+        tableView.deselectRow(at: indexPath, animated: true)
+        guard let userId = messagesViewModel?[indexPath.row].fromUserId else { return }
+        let request = ChatsScreen.FetchUserToStartChating.Request(userId: userId)
+        interactor?.fetchUserToStartChating(request: request)
     }
     
     func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
-        return 60
+        return Constants.tableViewCellHeight
     }
 }

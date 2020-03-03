@@ -15,8 +15,9 @@ import Firebase
 
 protocol ChatsScreenPresentationLogic {
     func userHasLogouted(response: ChatsScreen.Logout.Response)
-    func presentUserName(response: ChatsScreen.FetchUserName.Response)
+    func presentCurrentUser(response: ChatsScreen.FetchCurrentUser.Response)
     func presentMessages(response: ChatsScreen.FetchMessages.Response)
+    func presentUserToStartChating(response: ChatsScreen.FetchUserToStartChating.Response)
 }
 
 class ChatsScreenPresenter: ChatsScreenPresentationLogic {
@@ -29,10 +30,13 @@ class ChatsScreenPresenter: ChatsScreenPresentationLogic {
         viewController?.displayLoginScreen(viewModel: viewModel)
     }
     
-    func presentUserName(response: ChatsScreen.FetchUserName.Response) {
-        let name = response.user.name
-        let viewModel = ChatsScreen.FetchUserName.ViewModel(userName: name)
-        viewController?.displayUserName(viewModel: viewModel)
+    func presentCurrentUser(response: ChatsScreen.FetchCurrentUser.Response) {
+        let userViewModel = ListOfUsers.FetchUsers.ViewModel.UserViewModel(userName: response.user.name,
+                                                                           userEmail: response.user.email,
+                                                                           userImageURL: response.user.imageURL,
+                                                                           userId: response.user.id)
+        let viewModel = ChatsScreen.FetchCurrentUser.ViewModel(userViewModel: userViewModel)
+        viewController?.displayCurrentUser(viewModel: viewModel)
     }
     
     func presentMessages(response: ChatsScreen.FetchMessages.Response) {
@@ -40,10 +44,10 @@ class ChatsScreenPresenter: ChatsScreenPresentationLogic {
             let date = self?.dateFormatter.formatToString(from: response.message.date)
             let messageViewModel = ChatsScreen.FetchMessages.ViewModel.MessagesViewModel(text: response.message.text ?? "image",
                                                                                          fromUserName: fromUserName,
+                                                                                         profileImageURL: response.profileImageURL,
+                                                                                         fromUserId: response.fromUserId,
                                                                                          date: date ?? "")
-            var messageDictionary = response.messagesDictionary
-            messageDictionary[response.message.toId] = messageViewModel
-            let viewModel = ChatsScreen.FetchMessages.ViewModel(messagesDictionary: messageDictionary)
+            let viewModel = ChatsScreen.FetchMessages.ViewModel(key: response.fromUserId, value: messageViewModel)
             self?.viewController?.displayMessages(viewModel: viewModel)
         }
     }
@@ -54,5 +58,14 @@ class ChatsScreenPresenter: ChatsScreenPresentationLogic {
             let user = User(snapshot: snapshot)
             completion(user.name)
         }
+    }
+    
+    func presentUserToStartChating(response: ChatsScreen.FetchUserToStartChating.Response) {
+        let userViewModel = ListOfUsers.FetchUsers.ViewModel.UserViewModel(userName: response.user.name,
+                                                                           userEmail: response.user.email,
+                                                                           userImageURL: response.user.imageURL,
+                                                                           userId: response.user.id)
+        let viewModel = ChatsScreen.FetchUserToStartChating.ViewModel(userViewModel: userViewModel)
+        viewController?.startChatWithUser(viewModel: viewModel)
     }
 }

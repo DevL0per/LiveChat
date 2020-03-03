@@ -17,7 +17,7 @@ enum ChatScreen {
     
     enum SendMessage {
         struct Request {
-            let text: String
+            let text: String?
             let toId: String
         }
         

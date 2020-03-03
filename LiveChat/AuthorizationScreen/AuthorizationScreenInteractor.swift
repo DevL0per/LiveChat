@@ -21,7 +21,6 @@ protocol AuthorizationScreenBusinessLogic {
 }
 
 protocol AuthorizationScreenDataStore {
-    //var name: String { get set }
 }
 
 class AuthorizationScreenInteractor: AuthorizationScreenBusinessLogic, AuthorizationScreenDataStore {
@@ -29,41 +28,53 @@ class AuthorizationScreenInteractor: AuthorizationScreenBusinessLogic, Authoriza
     var presenter: AuthorizationScreenPresentationLogic?
     var worker: AuthorizationScreenWorker?
     
+    var textValidationManager = TextValidationManager()
+    
     private let url = "https://livechat-902e9.firebaseio.com/"
-    //private let storage = Storage.storage(url: url)
   
-    // MARK: Do something
+    // MARK: Methods realization
     
     func saveUser(request: AuthorizationScreen.SaveUser.Request) {
         guard let email = request.userEmail,
-              let name = request.userName,
-              let password = request.userPassword else { return }
+            let name = request.userName,
+            let password = request.userPassword else { return }
+        
+        if let nameError = textValidationManager.isValidEmail(email) {
+            presenter?.presentNewUser(response: AuthorizationScreen.SaveUser.Response(textError: nameError))
+            return
+        } else if let emailError = textValidationManager.validateName(text: name) {
+            presenter?.presentNewUser(response: AuthorizationScreen.SaveUser.Response(textError: emailError))
+            return
+        } else if let passwordError = textValidationManager.validatePassword(text: password) {
+            presenter?.presentNewUser(response: AuthorizationScreen.SaveUser.Response(textError: passwordError))
+            return
+        }
         
         Auth.auth().createUser(withEmail: email, password: password) { [unowned self] (result, error) in
             if let error = error {
                 print(error)
                 return
             }
-            
             guard let userId = result?.user.uid else { return }
             
-            let values = ["name": name, "email": email]
+            let values = ["name": name, "email": email, "profileImage": ""]
             var ref = Database.database().reference(fromURL: self.url)
             ref  = ref.child("users").child(userId)
             ref.updateChildValues(values) { (error, ref) in
                 if let error = error {
                     print(error)
+                    
                     return
                 }
             }
-            self.presenter?.presentUser()
+            self.presenter?.presentNewUser(response: AuthorizationScreen.SaveUser.Response(textError: nil))
         }
     }   
     
     func checkIfUserAvailable(requset: AuthorizationScreen.CheckIfUserAvailable.Request) {
         Auth.auth().addStateDidChangeListener { [weak self] (auth, user) in
             if user != nil {
-                self?.presenter?.presentUser()
+                self?.presenter?.presentUser(response: AuthorizationScreen.Login.Response(error: nil))
             }
         }
     }
@@ -71,9 +82,10 @@ class AuthorizationScreenInteractor: AuthorizationScreenBusinessLogic, Authoriza
     func login(request: AuthorizationScreen.Login.Request) {
         guard let email = request.userEmail, let password = request.userPassword
         else { return }
-        Auth.auth().signIn(withEmail: email, password: password) { (result, error) in
+        Auth.auth().signIn(withEmail: email, password: password) { [weak self] (result, error) in
             if let error = error {
-                print(error)
+                let response = AuthorizationScreen.Login.Response(error: error.localizedDescription)
+                self?.presenter?.presentUser(response: response)
                 return
             }
         }

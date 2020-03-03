@@ -31,7 +31,6 @@ class ChatScreenWithUserCollectionViewCell: UICollectionViewCell {
     
     lazy var messageImage: CachedImageView = {
         let imageView = CachedImageView()
-        imageView.isHidden = true
         imageView.isUserInteractionEnabled = true
         imageView.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(performMessageImageZoomIn)))
         imageView.clipsToBounds = true
@@ -82,6 +81,13 @@ class ChatScreenWithUserCollectionViewCell: UICollectionViewCell {
     }
     
     func setupElements(with message: ChatScreen.FetchMessage.ViewModel.MessageViewModel) {
+        messageImage.image = nil
+        textMessage.text = nil
+        textMessageTimeLabel.text = nil
+        
+        textMessage.isHidden = true
+        messageImage.isHidden = true
+        
         textMessage.text = message.textMessage
         textMessageTimeLabel.text = message.time
         textMessageLeftConstraint.isActive = false
@@ -96,8 +102,9 @@ class ChatScreenWithUserCollectionViewCell: UICollectionViewCell {
         }
         if message.imageURL != nil {
             messageImage.setImage(with: message.imageURL)
-            textMessage.isHidden = true
             messageImage.isHidden = false
+        } else {
+            textMessage.isHidden = false
         }
     }
     
@@ -116,7 +123,7 @@ class ChatScreenWithUserCollectionViewCell: UICollectionViewCell {
         textMessageTimeLabel.leadingAnchor.constraint(equalTo: textMessage.trailingAnchor, constant: 3).isActive = true
         textMessageTimeLabel.trailingAnchor.constraint(equalTo: messageContentView.trailingAnchor, constant: -2).isActive = true
         textMessageTimeLabel.bottomAnchor.constraint(equalTo: messageContentView.bottomAnchor, constant: -2).isActive = true
-        textMessageTimeLabel.widthAnchor.constraint(equalToConstant: 30).isActive = true
+        textMessageTimeLabel.widthAnchor.constraint(equalToConstant: 32).isActive = true
         
         textMessage.leadingAnchor.constraint(equalTo: messageContentView.leadingAnchor).isActive = true
         textMessage.topAnchor.constraint(equalTo: messageContentView.topAnchor).isActive = true

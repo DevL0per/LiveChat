@@ -28,11 +28,23 @@ class ListOfUsersViewController: UIViewController, ListOfUsersDisplayLogic {
         return tableView
     }()
     
+    let selectedBackgroundView: UIView = {
+        let view = UIView()
+        view.backgroundColor = .clear
+        return view
+    }()
+    
     override func viewDidLoad() {
         super.viewDidLoad()
+        title = "Users"
         setup()
         setupTableView()
         getUsers()
+    }
+    
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        tabBarController?.tabBar.isHidden = false
     }
     
     override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
@@ -58,6 +70,8 @@ class ListOfUsersViewController: UIViewController, ListOfUsersDisplayLogic {
         view.addSubview(usersTableView)
         usersTableView.dataSource = self
         usersTableView.delegate = self
+        usersTableView.tableFooterView = UIView()
+        usersTableView.backgroundColor = .black
         usersTableView.register(ListOfUsersTableViewCell.self, forCellReuseIdentifier: "usersCell")
         
         usersTableView.topAnchor.constraint(equalTo: view.topAnchor).isActive = true
@@ -97,6 +111,7 @@ extension ListOfUsersViewController: UITableViewDelegate, UITableViewDataSource 
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "usersCell", for: indexPath) as! ListOfUsersTableViewCell
+        cell.selectedBackgroundView = selectedBackgroundView
         guard let userViewModel = usersViewModel?[indexPath.row] else { return UITableViewCell() }
         cell.setupUserElements(with: userViewModel)
         return cell
@@ -106,6 +121,7 @@ extension ListOfUsersViewController: UITableViewDelegate, UITableViewDataSource 
         guard let user = usersViewModel?[indexPath.row] else { return }
         let vc = ChatScreenViewController()
         vc.user = user
+        tableView.deselectRow(at: indexPath, animated: true)
         navigationController?.pushViewController(vc, animated: true)
     }
 }
