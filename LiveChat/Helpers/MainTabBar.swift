@@ -29,5 +29,4 @@ class MainTabBar: UITabBarController {
         settingsVC.tabBarItem.image = UIImage(named: "settingsIcon")
         return settingsVC
     }
-    
 }

@@ -80,6 +80,7 @@ class UserProfileNavigationBarView: UIView {
         contentView.addSubview(nameLabel)
         nameLabel.leadingAnchor.constraint(equalTo: profileImageView.trailingAnchor, constant: 5).isActive = true
         nameLabel.heightAnchor.constraint(equalToConstant: 30).isActive = true
+        nameLabel.trailingAnchor.constraint(equalTo: contentView.trailingAnchor).isActive = true
         nameLabel.centerYAnchor.constraint(equalTo: profileImageView.centerYAnchor).isActive = true
     }
 }

@@ -18,8 +18,10 @@ protocol ListOfUsersDisplayLogic: class {
 
 class ListOfUsersViewController: UIViewController, ListOfUsersDisplayLogic {
     
+    // MARK: - Properties
     var interactor: ListOfUsersBusinessLogic?
     var router: (NSObjectProtocol & ListOfUsersRoutingLogic & ListOfUsersDataPassing)?
+    var configurator: ListOfUsersScreenConfiguratorProtocol = ListOfUsersScreenConfigurator()
     var usersViewModel: [ListOfUsers.FetchUsers.ViewModel.UserViewModel]?
     
     var usersTableView: UITableView = {
@@ -34,10 +36,11 @@ class ListOfUsersViewController: UIViewController, ListOfUsersDisplayLogic {
         return view
     }()
     
+    //MARK: - Methods
     override func viewDidLoad() {
         super.viewDidLoad()
         title = "Users"
-        setup()
+        configurator.configure(viewController: self)
         setupTableView()
         getUsers()
     }
@@ -47,13 +50,8 @@ class ListOfUsersViewController: UIViewController, ListOfUsersDisplayLogic {
         tabBarController?.tabBar.isHidden = false
     }
     
-    override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
-        if let scene = segue.identifier {
-            let selector = NSSelectorFromString("routeTo\(scene)WithSegue:")
-            if let router = router, router.responds(to: selector) {
-                router.perform(selector, with: segue)
-            }
-        }
+    override func dismiss(animated flag: Bool, completion: (() -> Void)? = nil) {
+        super.dismiss(animated: flag, completion: nil)
     }
     
     func getUsers() {
@@ -80,25 +78,9 @@ class ListOfUsersViewController: UIViewController, ListOfUsersDisplayLogic {
         usersTableView.leadingAnchor.constraint(equalTo: view.leadingAnchor).isActive = true
     }
     
-    private func setup() {
-        let viewController = self
-        let interactor = ListOfUsersInteractor()
-        let presenter = ListOfUsersPresenter()
-        let router = ListOfUsersRouter()
-        viewController.interactor = interactor
-        viewController.router = router
-        interactor.presenter = presenter
-        presenter.viewController = viewController
-        router.viewController = viewController
-        router.dataStore = interactor
-    }
-    
-    override func dismiss(animated flag: Bool, completion: (() -> Void)? = nil) {
-        super.dismiss(animated: flag, completion: nil)
-    }
 }
 
-
+//MARK: - UITableViewDelegate, UITableViewDataSource
 extension ListOfUsersViewController: UITableViewDelegate, UITableViewDataSource {
     
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {

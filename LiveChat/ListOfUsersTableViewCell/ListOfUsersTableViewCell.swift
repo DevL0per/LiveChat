@@ -50,23 +50,23 @@ class ListOfUsersTableViewCell: UITableViewCell {
         nameLabel.text = userInfo.userName
         bottomLabel.text = userInfo.userEmail
         
-        if userInfo.userImageURL != "" {
-            photoImageView.setImage(with: userInfo.userImageURL)
-            photoImageView.contentMode = .center
-        } else {
-            photoImageView.image = UIImage(named: "profileImage")
-            photoImageView.contentMode = .scaleAspectFit
-        }
+        setupImageView(imageURL: userInfo.userImageURL)
     }
     
     func setupUserMessages(with messageInfo: ChatsScreen.FetchMessages.ViewModel.MessagesViewModel) {
         nameLabel.text = messageInfo.fromUserName
         bottomLabel.text = messageInfo.text
         
-        if messageInfo.profileImageURL != "" {
-            photoImageView.setImage(with: messageInfo.profileImageURL)
+        setupImageView(imageURL: messageInfo.profileImageURL)
+    }
+    
+    private func setupImageView(imageURL: String) {
+        if imageURL != "" {
+            photoImageView.setImage(with: imageURL)
+            photoImageView.contentMode = .scaleAspectFit
         } else {
             photoImageView.image = UIImage(named: "profileImage")
+            photoImageView.contentMode = .center
         }
     }
     

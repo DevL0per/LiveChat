@@ -80,11 +80,11 @@ class AuthorizationScreenViewController: UIViewController, AuthorizationScreenDi
         button.setTitle("REGISTRATION", for: .normal)
         return button
     }()
-    // MARK: - Methods
     
+    // MARK: - Methods
     override func viewDidLoad() {
         super.viewDidLoad()
-        view.backgroundColor = #colorLiteral(red: 0.2598086596, green: 0.2304657698, blue: 0.3598444462, alpha: 1)
+        view.backgroundColor = #colorLiteral(red: 0.2588235294, green: 0.231372549, blue: 0.3607843137, alpha: 1)
         navigationController?.setNavigationBarHidden(true, animated: false)
         configurator.setup(viewController: self)
         setupTextFields()
@@ -97,6 +97,7 @@ class AuthorizationScreenViewController: UIViewController, AuthorizationScreenDi
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
         NotificationCenter.default.removeObserver(self)
+        view.endEditing(true)
     }
     
     override func viewWillAppear(_ animated: Bool) {
@@ -111,10 +112,6 @@ class AuthorizationScreenViewController: UIViewController, AuthorizationScreenDi
     
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
         view.endEditing(true)
-    }
-    
-    override func dismiss(animated flag: Bool, completion: (() -> Void)? = nil) {
-        super.dismiss(animated: flag, completion: nil)
     }
     
     func displayNameTextFieldNewsHeight(viewModel: AuthorizationScreen.ChangeTextFieldHeight.ViewModel) {
@@ -141,9 +138,7 @@ class AuthorizationScreenViewController: UIViewController, AuthorizationScreenDi
             let alert = AlertControllerManager.shared.createAlertController(title: "ERROR",
                                                                 subtitle: errorMessage)
             present(alert, animated: true, completion: nil)
-        } else {
-            displayUser(viewModel: AuthorizationScreen.Login.ViewModel(error: nil))
-        }
+        } 
     }
     
     @objc private func segmentedControlledWasPressed() {

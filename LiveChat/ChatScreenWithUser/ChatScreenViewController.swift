@@ -152,13 +152,15 @@ class ChatScreenViewController: UIViewController, ChatScreenDisplayLogic {
         }
     }
     
+    override func dismiss(animated flag: Bool, completion: (() -> Void)? = nil) {
+        super.dismiss(animated: flag, completion: nil)
+    }
+    
     @objc private func tableViewWasPressed() {
         messageTextField.resignFirstResponder()
     }
     
-    func messageWasSended(viewModel: ChatScreen.SendMessage.ViewModel) {
-        
-    }
+    func messageWasSended(viewModel: ChatScreen.SendMessage.ViewModel) {}
     
     func displayMessage(viewModel: ChatScreen.FetchMessage.ViewModel) {
         messagesViewModel.append(viewModel.messageViewModel)
@@ -243,10 +245,6 @@ class ChatScreenViewController: UIViewController, ChatScreenDisplayLogic {
             self.backgroundViewForZoomingImage.removeFromSuperview()
             self.startImageFrame = nil
         }
-    }
-    
-    override func dismiss(animated flag: Bool, completion: (() -> Void)? = nil) {
-        super.dismiss(animated: flag, completion: nil)
     }
 }
 

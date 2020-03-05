@@ -28,6 +28,7 @@ class SettingsScreenInteractor: SettingsScreenBusinessLogic, SettingsScreenDataS
     var presenter: SettingsScreenPresentationLogic?
     var worker: SettingsScreenWorker?
     var firebaseManager = FirebaseManager()
+    let textValidationManager = TextValidationManager()
     
     func fetchCurrentProfileImage(request: SettingsScreen.FetchCurrentUserImage.Request) {
         firebaseManager.fetchCurrentUser { [weak self] (user) in
@@ -55,13 +56,17 @@ class SettingsScreenInteractor: SettingsScreenBusinessLogic, SettingsScreenDataS
     
     func changeName(request: SettingsScreen.ChangeName.Request) {
         guard let userId = Auth.auth().currentUser?.uid else { return }
+        if let error = textValidationManager.validateName(text: request.newName) {
+            presenter?.presentNewName(response: SettingsScreen.ChangeName.Response(error: error))
+            return
+        }
         let ref = Database.database().reference(withPath: "users").child(userId)
         let newNameDictionary: [String: Any] = ["name": request.newName]
         ref.updateChildValues(newNameDictionary) { [weak self] (error, ref) in
             if let error = error {
                 print(error)
             }
-            self?.presenter?.presentNewName(response: SettingsScreen.ChangeName.Response())
+            self?.presenter?.presentNewName(response: SettingsScreen.ChangeName.Response(error: nil))
         }
     }
 }

@@ -30,10 +30,14 @@ class SettingsScreenPresenter: SettingsScreenPresentationLogic {
     }
     
     func presentNewProfileImage(response: SettingsScreen.ChangeProfileImage.Response) {
-        
+        viewController?.newImageWasUpload(viewModel: SettingsScreen.ChangeProfileImage.ViewModel())
     }
     
     func presentNewName(response: SettingsScreen.ChangeName.Response) {
-        viewController?.displayNewUserName(viewModel: SettingsScreen.ChangeName.ViewModel())
+        var textError: String?
+        if let error = response.error {
+            textError = error.description
+        }
+        viewController?.displayNewUserName(viewModel: SettingsScreen.ChangeName.ViewModel(errorText: textError))
     }
 }

@@ -42,6 +42,7 @@ class ChatsScreenViewController: UIViewController, ChatsScreenDisplayLogic {
         return view
     }()
     
+    private var isCurrentUserExist: Bool = true
     private let userProfileNavigationBarView = UserProfileNavigationBarView()
     
     private var messagesDictionarys: [String: ChatsScreen.FetchMessages.ViewModel.MessagesViewModel] = [:]
@@ -65,6 +66,12 @@ class ChatsScreenViewController: UIViewController, ChatsScreenDisplayLogic {
         tabBarController?.tabBar.isHidden = false
     }
     
+    deinit {
+        if isCurrentUserExist {
+            interactor?.doLogout(request: ChatsScreen.Logout.Request())
+        }
+    }
+    
     func startChatWithUser(viewModel: ChatsScreen.FetchUserToStartChating.ViewModel) {
         let vc = ChatScreenViewController()
         vc.user = viewModel.userViewModel
@@ -74,6 +81,7 @@ class ChatsScreenViewController: UIViewController, ChatsScreenDisplayLogic {
     func displayMessages(viewModel: ChatsScreen.FetchMessages.ViewModel) {
         messagesDictionarys[viewModel.key] = viewModel.value
         messagesViewModel = Array(messagesDictionarys.values)
+        messagesViewModel?.sort { $0.date > $1.date }
         messagesTableView.reloadData()
     }
     
@@ -84,6 +92,7 @@ class ChatsScreenViewController: UIViewController, ChatsScreenDisplayLogic {
     
     func displayLoginScreen(viewModel: ChatsScreen.Logout.ViewModel) {
         self.navigationController?.popViewController(animated: true)
+        isCurrentUserExist = false
     }
     
     private func setupNavigationItemLeftButton() {

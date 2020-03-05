@@ -95,7 +95,7 @@ class ChatScreenWithUserCollectionViewCell: UICollectionViewCell {
         if message.isMessageFromUser {
             textMessageLeftConstraint.isActive = true
         } else {
-            textMessage.backgroundColor = #colorLiteral(red: 0.1333177388, green: 0.1333433092, blue: 0.1333121657, alpha: 1)
+            textMessage.backgroundColor = #colorLiteral(red: 0.1333333333, green: 0.1333333333, blue: 0.1333333333, alpha: 1)
             messageContentView.backgroundColor = #colorLiteral(red: 0.1333177388, green: 0.1333433092, blue: 0.1333121657, alpha: 1)
             textMessageTimeLabel.backgroundColor = #colorLiteral(red: 0.1333177388, green: 0.1333433092, blue: 0.1333121657, alpha: 1)
             textMessageRightConstraint.isActive = true

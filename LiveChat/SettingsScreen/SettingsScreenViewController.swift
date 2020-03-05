@@ -29,7 +29,6 @@ protocol SettingsScreenDisplayLogic: class {
 class SettingsScreenViewController: UIViewController, SettingsScreenDisplayLogic {
     
     var interactor: SettingsScreenBusinessLogic?
-    
     var imagePickerContentView: UIView = {
         let view = UIView()
         view.translatesAutoresizingMaskIntoConstraints = false
@@ -63,6 +62,8 @@ class SettingsScreenViewController: UIViewController, SettingsScreenDisplayLogic
         return imageView
     }()
     
+    var isUserPickedAnImage: Bool = false
+    
     let imageViewPickerLabel: UILabel = {
         let label = UILabel()
         label.translatesAutoresizingMaskIntoConstraints = false
@@ -70,14 +71,14 @@ class SettingsScreenViewController: UIViewController, SettingsScreenDisplayLogic
     }()
     
     let newNameTextField = AuthorizationScreenTextField()
-    //let newEmailTextField = AuthorizationScreenTextField()
     
-    lazy var changePasswordButton: UIButton = {
+    lazy var changeNameButton: UIButton = {
         let button = UIButton()
         button.backgroundColor = #colorLiteral(red: 0.9317067266, green: 0.3866539598, blue: 0.6329562068, alpha: 1)
         button.alpha = 0.5
         button.layer.cornerRadius = 20
         button.setTitleColor(.white, for: .normal)
+        button.addTarget(self, action: #selector(changeProfileName), for: .touchUpInside)
         button.translatesAutoresizingMaskIntoConstraints = false
         button.setTitle("change name", for: .normal)
         return button
@@ -90,25 +91,49 @@ class SettingsScreenViewController: UIViewController, SettingsScreenDisplayLogic
         layoutSecondLayer()
         setupTextField()
         setup()
+
     }
     
     override func viewWillAppear(_ animated: Bool) {
-        imageViewPickerLabel.text = "Tap to select an image"
-        interactor?.fetchCurrentProfileImage(request: SettingsScreen.FetchCurrentUserImage.Request())
+        if !isUserPickedAnImage {
+            imageViewPicker.image = nil
+            interactor?.fetchCurrentProfileImage(request: SettingsScreen.FetchCurrentUserImage.Request())
+        }
+    }
+    
+    override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
+        view.endEditing(true)
     }
     
     func displayCurrentUserImage(viewModel: SettingsScreen.FetchCurrentUserImage.ViewModel) {
         if viewModel.userURL != "" {
             imageViewPickerLabel.text = ""
             imageViewPicker.setImage(with: viewModel.userURL)
+        } else {
+            imageViewPickerLabel.text = "Tap to select an image"
         }
     }
     
     func newImageWasUpload(viewModel: SettingsScreen.ChangeProfileImage.ViewModel) {
+        let alert = AlertControllerManager.shared.createAlertController(title: "Success",
+                                                            subtitle: "image was successfully changed")
+        present(alert, animated: true, completion: nil)
+        imageViewPickerLabel.text = ""
+        isUserPickedAnImage = false
     }
     
     func displayNewUserName(viewModel: SettingsScreen.ChangeName.ViewModel) {
-        
+        var alertTitle = "", alertMessage = ""
+        if let textError = viewModel.errorText {
+            alertTitle = "Error"
+            alertMessage = textError
+        } else {
+            alertTitle = "Success"
+            alertMessage = "name was successfully changed"
+        }
+        let alert = AlertControllerManager.shared.createAlertController(title: alertTitle,
+                                                            subtitle: alertMessage)
+        present(alert, animated: true, completion: nil)
     }
     
     @objc private func profileImageWasTapped() {
@@ -121,18 +146,26 @@ class SettingsScreenViewController: UIViewController, SettingsScreenDisplayLogic
     @objc private func changeProfileImage() {
         guard let image = imageViewPicker.image else { return }
         interactor?.changeProfileImage(request: SettingsScreen.ChangeProfileImage.Request(image: image))
+        view.endEditing(true)
+    }
+    
+    @objc private func changeProfileName() {
+        let request = SettingsScreen.ChangeName.Request(newName: newNameTextField.text!)
+        interactor?.changeName(request: request)
     }
     
     private func setupTextField() {
         newNameTextField.setPlaceHolderWithWhiteColor(text: "new name")
+        newNameTextField.delegate = self
+        newNameTextField.returnKeyType = .done
         newNameTextField.addTarget(self, action: #selector(newNameTextFieldWasChanged), for: .editingChanged)
     }
     
     @objc private func newNameTextFieldWasChanged() {
         if let text = newNameTextField.text, !text.isEmpty {
-            changePasswordButton.alpha = 1
+            changeNameButton.alpha = 1
         } else {
-            changePasswordButton.alpha = 0.5
+            changeNameButton.alpha = 0.5
         }
     }
     
@@ -161,17 +194,11 @@ class SettingsScreenViewController: UIViewController, SettingsScreenDisplayLogic
         newNameTextField.leadingAnchor.constraint(equalTo: passwordTextFieldsContentView.leadingAnchor).isActive = true
         newNameTextField.trailingAnchor.constraint(equalTo: passwordTextFieldsContentView.trailingAnchor).isActive = true
         
-//        passwordTextFieldsContentView.addSubview(newEmailTextField)
-//        newEmailTextField.topAnchor.constraint(equalTo: newNameTextField.bottomAnchor, constant: 5).isActive = true
-//        newEmailTextField.heightAnchor.constraint(equalToConstant: Constants.textFieldHeight).isActive = true
-//        newEmailTextField.leadingAnchor.constraint(equalTo: passwordTextFieldsContentView.leadingAnchor).isActive = true
-//        newEmailTextField.trailingAnchor.constraint(equalTo: passwordTextFieldsContentView.trailingAnchor).isActive = true
-        
-        passwordTextFieldsContentView.addSubview(changePasswordButton)
-        changePasswordButton.topAnchor.constraint(equalTo: newNameTextField.bottomAnchor, constant: 20).isActive = true
-        changePasswordButton.heightAnchor.constraint(equalToConstant: Constants.textFieldHeight).isActive = true
-        changePasswordButton.leadingAnchor.constraint(equalTo: passwordTextFieldsContentView.leadingAnchor).isActive = true
-        changePasswordButton.trailingAnchor.constraint(equalTo: passwordTextFieldsContentView.trailingAnchor).isActive = true
+        passwordTextFieldsContentView.addSubview(changeNameButton)
+        changeNameButton.topAnchor.constraint(equalTo: newNameTextField.bottomAnchor, constant: 20).isActive = true
+        changeNameButton.heightAnchor.constraint(equalToConstant: Constants.textFieldHeight).isActive = true
+        changeNameButton.leadingAnchor.constraint(equalTo: passwordTextFieldsContentView.leadingAnchor).isActive = true
+        changeNameButton.trailingAnchor.constraint(equalTo: passwordTextFieldsContentView.trailingAnchor).isActive = true
     }
     
     private func layoutFirstLayer() {
@@ -201,6 +228,7 @@ class SettingsScreenViewController: UIViewController, SettingsScreenDisplayLogic
     }
 }
 
+//MARK: - UIImagePickerControllerDelegate, UINavigationControllerDelegate
 extension SettingsScreenViewController: UIImagePickerControllerDelegate, UINavigationControllerDelegate {
     func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
         picker.dismiss(animated: true, completion: nil)
@@ -216,7 +244,14 @@ extension SettingsScreenViewController: UIImagePickerControllerDelegate, UINavig
         guard let image = optionalImage else { return }
         picker.dismiss(animated: true, completion: nil)
         imageViewPicker.image = image
-        imageViewPickerLabel.text = ""
+        isUserPickedAnImage = true
     }
 }
 
+//MARK: - UITextFieldDelegate
+extension SettingsScreenViewController: UITextFieldDelegate {
+    func textFieldShouldReturn(_ textField: UITextField) -> Bool {
+        view.endEditing(true)
+        return true
+    }
+}

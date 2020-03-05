@@ -46,9 +46,11 @@ enum SettingsScreen {
         }
         
         struct Response {
+            let error: TextError?
         }
         
         struct ViewModel {
+            let errorText: String?
         }
     }
 }
