@@ -81,7 +81,7 @@ class ChatsScreenViewController: UIViewController, ChatsScreenDisplayLogic {
     func displayMessages(viewModel: ChatsScreen.FetchMessages.ViewModel) {
         messagesDictionarys[viewModel.key] = viewModel.value
         messagesViewModel = Array(messagesDictionarys.values)
-        messagesViewModel?.sort { $0.date > $1.date }
+        messagesViewModel?.sort { $0.dateToCompare > $1.dateToCompare }
         messagesTableView.reloadData()
     }
     

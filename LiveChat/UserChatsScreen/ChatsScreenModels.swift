@@ -58,7 +58,8 @@ enum ChatsScreen {
                 let fromUserName: String
                 let profileImageURL: String
                 let fromUserId: String
-                let date: String
+                let stringDate: String
+                let dateToCompare: Double
             }
         }
     }

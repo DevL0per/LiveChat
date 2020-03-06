@@ -46,7 +46,8 @@ class ChatsScreenPresenter: ChatsScreenPresentationLogic {
                                                                                          fromUserName: fromUserName,
                                                                                          profileImageURL: response.profileImageURL,
                                                                                          fromUserId: response.fromUserId,
-                                                                                         date: date ?? "")
+                                                                                         stringDate: date ?? "",
+                                                                                         dateToCompare: response.message.date)
             let viewModel = ChatsScreen.FetchMessages.ViewModel(key: response.fromUserId, value: messageViewModel)
             self?.viewController?.displayMessages(viewModel: viewModel)
         }
